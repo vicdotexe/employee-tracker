@@ -32,6 +32,7 @@ async function askRoot(){
             await addEmployee();
             break;
         case "Update an employee's role":
+            await updateEmployeeRole();
             break;
         case "Quit":
             db.db.end();
@@ -80,6 +81,22 @@ async function addEmployee(){
     console.log(`${firstName} ${lastName} has been added with the role of ${roles.find(role=>role.id == roleId).title}`);
 }
 
+async function updateEmployeeRole(){
+    const roles = await db.getRoles();
+    const employees = await db.getEmployees();
+    const empChoices = employees.map(emp=>{
+        return {
+            name: `${emp["first_name"]} ${emp["last_name"]} (id: ${emp.id}, current role:${roles.find(role=>role.id == emp["role_id"]).title})`,
+            value: emp.id
+        }
+    });
+    const {employeeId, roleId} = await prompt([
+        {type:"list",name:"employeeId", message:"Which employee would you like to change the role of?", choices:empChoices},
+        {type:"list",name:"roleId", message:"Pick their new role:", choices: roles.map(role=>{return{name:role.title, value:role.id}})}
+    ]);
+    await db.updateEmployeeRole(employeeId,roleId);
+    console.log(`Employee role has been updated.`);
+}
 
 async function main(){
     let connection = await mysql.createConnection(  {
