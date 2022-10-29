@@ -29,6 +29,7 @@ async function askRoot(){
             await addRole();
             break;
         case "Add an employee":
+            await addEmployee();
             break;
         case "Update an employee's role":
             break;
@@ -44,20 +45,41 @@ async function askRoot(){
 
 async function addRole(){
     const deps = await db.getDepartments();
-    const depNames = deps.map(x=> x.name);
-    const {title, salary, depName} = await prompt([
+    const {title, salary, depId} = await prompt([
         {type: "input", name: "title", message: "What is the title of the role you want to add?"},
         {type: "input", name: "salary", message: "What is this role's salary?"},
-        {type: "list", name: "depName", message: "Which department does this role belong to?", choices: depNames}
+        {type: "list", name: "depId", message: "Which department does this role belong to?", choices: deps.map(dep=> {return {name:dep.name, value:dep.id}})}
     ]);
     if (isNaN(salary)){
         console.log("!!! Salary must be a number. !!!");
         return;
     }
-    const depId = deps.find(x=>x.name == depName).id;
     await db.addRole(title, salary, depId);
     console.log(`${title} added to roles.`);
 }
+
+async function addEmployee(){
+    const roles = await db.getRoles();
+    const {firstName, lastName, roleId, hasManager} = await prompt([
+        {type: "input", name: "firstName", message: "Employees first name:"},
+        {type: "input", name: "lastName", message: "Employees last name:"},
+        {type: "list", name: "roleId", message: "Employees role:", choices: roles.map(role=>{return {name:role.title, value:role.id}})},
+        {type: "confirm", name: "hasManager", message: "Will the employee have a manager?"}
+    ]);
+    if (hasManager){
+        const employees = await db.getEmployees();
+        const empChoices = employees.map(emp=>{
+            return {
+                name: `${emp["first_name"]} ${emp["last_name"]} (id:${emp.id})`,
+                value: emp.id
+            }
+        })
+        var {managerId} = await prompt({type: "list", name:"managerId", message:"Who will their manager be?", choices: empChoices});
+    }
+    await db.addEmployee(firstName, lastName, roleId, managerId);
+    console.log(`${firstName} ${lastName} has been added with the role of ${roles.find(role=>role.id == roleId).title}`);
+}
+
 
 async function main(){
     let connection = await mysql.createConnection(  {
