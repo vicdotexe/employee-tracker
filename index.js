@@ -4,6 +4,7 @@ const prompt = require('inquirer').prompt;
 const BusinessDatabase = require('./lib/business');
 const db = new BusinessDatabase();
 
+// the root of the menu
 async function askRoot(){
     console.log("----------------------------------------------");
 
@@ -11,62 +12,119 @@ async function askRoot(){
         type: "list",
         name: "ans",
         message: "What would you like to do?",
-        choices: ["View all roles", 
-        "View all employees", 
-        "View all departments", 
-        "Add a department", 
-        "Add a role", 
-        "Add an employee", 
-        "Update an employee's role", 
-        "Update an employee's manager",
-        "Get employee's under manager",
-        "Get department budgets",
-        "Quit"]
-    });
-    console.log();
+        choices: ["View", "Update", "Add", "Delete", "Quit"]
+    })
 
-    switch(ans){
-        case "View all roles":
-            console.log("Roles:");
-            console.table(await db.getRolesFancy());
+    switch (ans){
+        case "View":
+            await promptView()
             break;
-        case "View all employees":
-            console.log("Employees:");
-            console.table(await db.getEmployeesFancy());
+        case "Update":
+            await promptUpdate();
             break;
-        case "View all departments":
-            console.log("Departments:");
-            console.table(await db.getDepartmentsFancy());
+        case "Add":
+            await promptAdd();
             break;
-        case "Add a department":
-            await addDepartment();
-            break;
-        case "Add a role":
-            await addRole();
-            break;
-        case "Add an employee":
-            await addEmployee();
-            break;
-        case "Update an employee's role":
-            await updateEmployeeRole();
-            break;
-        case "Update an employee's manager":
-            await updateEmployeeManager();
-            break;
-        case "Get employee's under manager":
-            await getEmployeesByManager();
-            break;
-        case "Get department budgets":
-            console.table(await db.getBudgets());
+        case "Delete":
+            await promptDelete();
             break;
         case "Quit":
             db.end();
             return;
-        default:
-            throw new Error("Shouldn't reach this part of the switch block.");
     }
-    
+
     askRoot();
+}
+
+// prompt route for viewing options
+async function promptView(){
+    const {ans} = await prompt({
+        type: "list",
+        name: "ans",
+        message: "What would you like to view?",
+        choices: ["All Departments", "All Roles", "All Employees", "Employees by Manager", "Department Budgets", "Go Back"]
+    })
+
+    switch (ans){
+        case "All Departments":
+            console.table(await db.getDepartmentsFancy());
+            break;
+        case "All Roles":
+            console.table(await db.getRolesFancy());
+            break;
+        case "All Employees":
+            console.table(await db.getEmployeesFancy());
+            break;
+        case "Employees by Manager":
+            await getEmployeesByManager();
+            break;
+        case "Department Budgets":
+            console.table(await db.getBudgets());
+            break;
+    }
+}
+
+// prompt route for update options
+async function promptUpdate(){
+    const {ans} = await prompt({
+        type: "list",
+        name: "ans",
+        message: "What would you like to update",
+        choices: ["Employee's Role", "Employee's Manager", "Go Back"]
+    })
+
+    switch (ans){
+        case "Employee's Role":
+            await updateEmployeeRole();
+            break;
+        case "Employee's Manager":
+            await updateEmployeeManager();
+            break;
+    }
+}
+
+// prompt route for add options
+async function promptAdd(){
+    const {ans} = await prompt({
+        type: "list",
+        name: "ans",
+        message: "What would you like to add?",
+        choices: ["New Employee", "New Role", "New Department", "Go Back"]
+    })
+
+    switch (ans){
+        case "New Employee":
+            await addEmployee();
+            break;
+        case "New Role":
+            await addRole();
+            break;
+        case "New Department":
+            await addDepartment();
+            break;
+    }
+}
+
+// prompt route for delete options
+async function promptDelete(){
+    const {ans} = await prompt({
+        type: "list",
+        name: "ans",
+        message: "What would you like to Delete?",
+        choices: ["An Employee", "A Role", "A Department", "Go Back"]
+    })
+
+    switch (ans){
+        case "An Employee":
+            await deleteEmployee();
+            break;
+        case "A Role":
+            await deleteRole();
+            break;
+        case "A Department":
+            await deleteDepartment();
+            break;
+    }
 }
 
 // prompt route for adding a department
@@ -113,6 +171,33 @@ async function addEmployee(){
     }
     await db.addEmployee(firstName, lastName, roleId, managerId);
     console.log(`${firstName} ${lastName} has been added with the role of ${roles.find(role=>role.id == roleId).title}`);
+}
+
+// prompt route for deleting a department
+async function deleteDepartment(){
+    const deps = await db.getDepartments();
+    const depChoices = deps.map(dep=>{return{name:dep.name, value:dep.id}});
+    const {depId} = await prompt({type:"list",name:"depId",message:"Which department would you like to delete?",choices:depChoices});
+    db.deleteDepartment(depId);
+    console.log(`The department has been deleted.`)
+}
+
+// prompt route for deleting a role
+async function deleteRole(){
+    const roles = await db.getRoles();
+    const roleChoices = roles.map(role=>{return{name:role.title, value:role.id}});
+    const {roleId} = await prompt({type:"list",name:"roleId",message:"Which role would you like to delete?",choices:roleChoices});
+    db.deleteRole(roleId);
+    console.log(`The role has been deleted.`)
+}
+
+// prompt route for deleting an employee
+async function deleteEmployee(){
+    const employees = await db.getEmployeesFancy();
+    const empChoices = employees.map(emp=>{return{name:`${emp.Name} - ${emp.Title} in ${emp.Department} (id: ${emp.ID})}`, value:emp.ID}});
+    const {empId} = await prompt({type:"list",name:"empId",message:"Which employee would you like to delete?",choices:empChoices});
+    db.deleteEmployee(empId);
+    console.log(`The employee has been deleted.`)
 }
 
 // prompt route for updating an employee's role
