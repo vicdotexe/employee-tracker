@@ -18,6 +18,7 @@ async function askRoot(){
         "Add an employee", 
         "Update an employee's role", 
         "Update an employee's manager",
+        "Get employee's under manager",
         "Quit"]
     });
     console.log();
@@ -48,6 +49,9 @@ async function askRoot(){
             break;
         case "Update an employee's manager":
             await updateEmployeeManager();
+            break;
+        case "Get employee's under manager":
+            await getEmployeesByManager();
             break;
         case "Quit":
             db.db.end();
@@ -123,7 +127,7 @@ async function updateEmployeeRole(){
     console.log(`Employee role has been updated.`);
 }
 
-//prompt route for updating an employee's manager
+// prompt route for updating an employee's manager
 async function updateEmployeeManager(){
     const employees = await db.getEmployees();
     const empChoices = employees.map(emp=>{return{name:`${emp["first_name"]} ${emp["last_name"]} (id: ${emp.id})`, value: emp.id}});
@@ -133,6 +137,14 @@ async function updateEmployeeManager(){
     ]);
     await db.updateEmployeeManager(employeeId,managerId);
     console.log(`The employee's manager has been updated.`);
+}
+
+// prompt route for getting employees under a certain manager
+async function getEmployeesByManager(){
+    const managers = await db.getManagers();
+    const mngChoices = managers.map(mng=>{return{name:`${mng.Name} - ${mng.Title} in ${mng.Department} (id: ${mng.ID})`, value:mng.ID}});
+    const {managerId} = await prompt({type:"list", name:"managerId", message: "Under which manager?", choices:mngChoices});
+    console.table(await db.getEmployeesByManager(managerId));
 }
 
 // main async function to initialize an async mysql connection
