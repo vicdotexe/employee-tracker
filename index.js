@@ -5,25 +5,37 @@ const BusinessDatabase = require('./lib/business');
 const db = new BusinessDatabase();
 
 async function askRoot(){
+    console.log("----------------------------------------------");
     const {ans} = await prompt({
         type: "list",
         name: "ans",
         message: "What would you like to do?",
-        choices: ["View all roles", "View all employees", "View all departments", "Add a role", "Add an employee", "Update an employee's role", "Quit"]
+        choices: ["View all roles", 
+        "View all employees", 
+        "View all departments", 
+        "Add a department", 
+        "Add a role", 
+        "Add an employee", 
+        "Update an employee's role", 
+        "Update an employee's manager",
+        "Quit"]
     });
     console.log();
     switch(ans){
         case "View all roles":
             console.log("Roles:");
-            console.table(await db.getRoles());
+            console.table(await db.getRolesFancy());
             break;
         case "View all employees":
             console.log("Employees:");
-            console.table(await db.getEmployees());
+            console.table(await db.getEmployeesFancy());
             break;
         case "View all departments":
             console.log("Departments:");
-            console.table(await db.getDepartments());
+            console.table(await db.getDepartmentsFancy());
+            break;
+        case "Add a department":
+            await addDepartment();
             break;
         case "Add a role":
             await addRole();
@@ -34,16 +46,27 @@ async function askRoot(){
         case "Update an employee's role":
             await updateEmployeeRole();
             break;
+        case "Update an employee's manager":
+            await updateEmployeeManager();
+            break;
         case "Quit":
             db.db.end();
             return;
         default:
             throw new Error("Shouldn't reach this part of the switch block.");
     }
-    console.log("----------------------------------------------");
+    
     askRoot();
 }
 
+// prompt route for adding a department
+async function addDepartment(){
+    const {depName} = await prompt({type: "input",name:"depName",message:"Name of new department being added:"});
+    db.addDepartment(depName);
+    console.log(`Added ${depName} to the departments.`);
+}
+
+// prompt route for adding a role
 async function addRole(){
     const deps = await db.getDepartments();
     const {title, salary, depId} = await prompt([
@@ -59,6 +82,7 @@ async function addRole(){
     console.log(`${title} added to roles.`);
 }
 
+// prompt route for adding an employee
 async function addEmployee(){
     const roles = await db.getRoles();
     const {firstName, lastName, roleId, hasManager} = await prompt([
@@ -81,6 +105,7 @@ async function addEmployee(){
     console.log(`${firstName} ${lastName} has been added with the role of ${roles.find(role=>role.id == roleId).title}`);
 }
 
+// prompt route for updating an employee's role
 async function updateEmployeeRole(){
     const roles = await db.getRoles();
     const employees = await db.getEmployees();
@@ -98,6 +123,19 @@ async function updateEmployeeRole(){
     console.log(`Employee role has been updated.`);
 }
 
+//prompt route for updating an employee's manager
+async function updateEmployeeManager(){
+    const employees = await db.getEmployees();
+    const empChoices = employees.map(emp=>{return{name:`${emp["first_name"]} ${emp["last_name"]} (id: ${emp.id})`, value: emp.id}});
+    const {employeeId, managerId} = await prompt([
+        {type:"list", name:"employeeId", message:"Which employee is having their manager updated?", choices:empChoices},
+        {type:"list", name:"managerId", message:"Who will their manager be?", choices:[{name:"No Manager", value:null},...empChoices]}
+    ]);
+    await db.updateEmployeeManager(employeeId,managerId);
+    console.log(`The employee's manager has been updated.`);
+}
+
+// main async function to initialize an async mysql connection
 async function main(){
     let connection = await mysql.createConnection(  {
         host: 'localhost',
@@ -109,7 +147,6 @@ async function main(){
     db.initialize(connection);
     askRoot();
 }
-
 
 
 main();
