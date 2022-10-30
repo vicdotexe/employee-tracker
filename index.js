@@ -6,6 +6,7 @@ const db = new BusinessDatabase();
 
 async function askRoot(){
     console.log("----------------------------------------------");
+
     const {ans} = await prompt({
         type: "list",
         name: "ans",
@@ -19,9 +20,11 @@ async function askRoot(){
         "Update an employee's role", 
         "Update an employee's manager",
         "Get employee's under manager",
+        "Get department budgets",
         "Quit"]
     });
     console.log();
+
     switch(ans){
         case "View all roles":
             console.log("Roles:");
@@ -53,8 +56,11 @@ async function askRoot(){
         case "Get employee's under manager":
             await getEmployeesByManager();
             break;
+        case "Get department budgets":
+            console.table(await db.getBudgets());
+            break;
         case "Quit":
-            db.db.end();
+            db.end();
             return;
         default:
             throw new Error("Shouldn't reach this part of the switch block.");
