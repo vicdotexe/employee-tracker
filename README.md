@@ -42,7 +42,7 @@ After running the application you will be prompted various options:
 - An existing role
 - An employee
 
-![https://drive.google.com/file/d/1G-2os4S-pGw6OUL4CkaTtqI6B6KqZ6pT/view](./assets/screenshot.png)
+![https://drive.google.com/file/d/1G-2os4S-pGw6OUL4CkaTtqI6B6KqZ6pT/view](assets/screenshot.PNG)
 
 ## Contributing
 Contributions are welcome, contact info is below.
