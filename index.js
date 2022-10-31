@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise');
 const prompt = require('inquirer').prompt;
+const {printTable} = require('console-table-printer');
 
 const BusinessDatabase = require('./lib/business');
 const db = new BusinessDatabase();
@@ -47,19 +48,19 @@ async function promptView(){
 
     switch (ans){
         case "All Departments":
-            console.table(await db.getDepartmentsFancy());
+            printTable(await db.getDepartmentsFancy());
             break;
         case "All Roles":
-            console.table(await db.getRolesFancy());
+            printTable(await db.getRolesFancy());
             break;
         case "All Employees":
-            console.table(await db.getEmployeesFancy());
+            printTable(await db.getEmployeesFancy());
             break;
         case "Employees by Manager":
             await getEmployeesByManager();
             break;
         case "Department Budgets":
-            console.table(await db.getBudgets());
+            printTable(await db.getBudgets());
             break;
     }
 }
@@ -235,21 +236,18 @@ async function getEmployeesByManager(){
     const managers = await db.getManagers();
     const mngChoices = managers.map(mng=>{return{name:`${mng.Name} - ${mng.Title} in ${mng.Department} (id: ${mng.ID})`, value:mng.ID}});
     const {managerId} = await prompt({type:"list", name:"managerId", message: "Under which manager?", choices:mngChoices});
-    console.table(await db.getEmployeesByManager(managerId));
+    printTable(await db.getEmployeesByManager(managerId));
 }
 
-// main async function to initialize an async mysql connection
-async function main(){
-    let connection = await mysql.createConnection(  {
-        host: 'localhost',
-        user: 'root',
-        password: 'password',
-        database: 'business_db'
-      });
-
+// create the database connection and send it to the helper class, then kick off the prompts
+mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'password',
+    database: 'business_db'
+  }, (connection)=>{
+    return connection;
+  }).then((connection)=>{
     db.initialize(connection);
     askRoot();
-}
-
-
-main();
+  });
